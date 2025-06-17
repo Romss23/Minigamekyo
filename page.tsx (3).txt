@@ -1,0 +1,798 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  Heart,
+  Play,
+  Camera,
+  Palette,
+  Music,
+  MessageCircle,
+  Timer,
+  Crown,
+  Users,
+  Copy,
+  Check,
+  Wifi,
+} from "lucide-react"
+
+type GameType =
+  | "menu"
+  | "createRoom"
+  | "joinRoom"
+  | "lobby"
+  | "gameSelect"
+  | "memoryGame"
+  | "drawingChallenge"
+  | "rhythmGame"
+  | "storyBuilder"
+  | "photoChallenge"
+  | "kissTimer"
+  | "datePlanner"
+  | "lovePuzzle"
+  | "romanticDare"
+
+interface Player {
+  id: string
+  name: string
+  isHost: boolean
+  connected: boolean
+  lastSeen: number
+}
+
+interface RoomData {
+  id: string
+  players: Player[]
+  currentGame: string | null
+  gameState: any
+  createdAt: number
+  lastActivity: number
+}
+
+export default function MultiplayerCouplePage() {
+  const [gameState, setGameState] = useState<GameType>("menu")
+  const [playerName, setPlayerName] = useState("")
+  const [playerId] = useState(() => Math.random().toString(36).substring(2, 15))
+  const [roomCode, setRoomCode] = useState("")
+  const [currentRoom, setCurrentRoom] = useState<RoomData | null>(null)
+  const [isHost, setIsHost] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<"connected" | "connecting" | "disconnected">("disconnected")
+  const [currentScore, setCurrentScore] = useState(0)
+  const [totalScore, setTotalScore] = useState(0)
+  const [copied, setCopied] = useState(false)
+
+  // Simulate real-time multiplayer with localStorage and polling
+  const saveRoomData = useCallback((roomData: RoomData) => {
+    localStorage.setItem(`room_${roomData.id}`, JSON.stringify(roomData))
+  }, [])
+
+  const loadRoomData = useCallback((roomId: string): RoomData | null => {
+    const data = localStorage.getItem(`room_${roomId}`)
+    return data ? JSON.parse(data) : null
+  }, [])
+
+  const updatePlayerStatus = useCallback(() => {
+    if (!currentRoom) return
+
+    const updatedRoom = { ...currentRoom }
+    const playerIndex = updatedRoom.players.findIndex((p) => p.id === playerId)
+
+    if (playerIndex !== -1) {
+      updatedRoom.players[playerIndex].lastSeen = Date.now()
+      updatedRoom.players[playerIndex].connected = true
+      updatedRoom.lastActivity = Date.now()
+
+      setCurrentRoom(updatedRoom)
+      saveRoomData(updatedRoom)
+    }
+  }, [currentRoom, playerId, saveRoomData])
+
+  const checkRoomUpdates = useCallback(() => {
+    if (!currentRoom) return
+
+    const latestRoom = loadRoomData(currentRoom.id)
+    if (latestRoom && latestRoom.lastActivity > currentRoom.lastActivity) {
+      setCurrentRoom(latestRoom)
+    }
+  }, [currentRoom, loadRoomData])
+
+  // Polling for real-time updates
+  useEffect(() => {
+    if (currentRoom) {
+      const interval = setInterval(() => {
+        updatePlayerStatus()
+        checkRoomUpdates()
+      }, 2000)
+
+      return () => clearInterval(interval)
+    }
+  }, [currentRoom, updatePlayerStatus, checkRoomUpdates])
+
+  const generateRoomCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase()
+  }
+
+  const createRoom = () => {
+    if (!playerName.trim()) return
+
+    const newRoomCode = generateRoomCode()
+    const newRoom: RoomData = {
+      id: newRoomCode,
+      players: [
+        {
+          id: playerId,
+          name: playerName,
+          isHost: true,
+          connected: true,
+          lastSeen: Date.now(),
+        },
+      ],
+      currentGame: null,
+      gameState: {},
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+    }
+
+    setRoomCode(newRoomCode)
+    setCurrentRoom(newRoom)
+    setIsHost(true)
+    setConnectionStatus("connected")
+    saveRoomData(newRoom)
+    setGameState("lobby")
+  }
+
+  const joinRoom = () => {
+    if (!playerName.trim() || !roomCode.trim()) return
+
+    const existingRoom = loadRoomData(roomCode)
+    if (!existingRoom) {
+      alert("Room tidak ditemukan! Pastikan kode room benar.")
+      return
+    }
+
+    if (existingRoom.players.length >= 2) {
+      alert("Room sudah penuh! Maksimal 2 pemain.")
+      return
+    }
+
+    const updatedRoom = { ...existingRoom }
+    updatedRoom.players.push({
+      id: playerId,
+      name: playerName,
+      isHost: false,
+      connected: true,
+      lastSeen: Date.now(),
+    })
+    updatedRoom.lastActivity = Date.now()
+
+    setCurrentRoom(updatedRoom)
+    setIsHost(false)
+    setConnectionStatus("connected")
+    saveRoomData(updatedRoom)
+    setGameState("lobby")
+  }
+
+  const copyRoomCode = async () => {
+    if (roomCode) {
+      await navigator.clipboard.writeText(roomCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const startGameSession = (gameId: string) => {
+    if (!currentRoom || !isHost) return
+
+    const updatedRoom = { ...currentRoom }
+    updatedRoom.currentGame = gameId
+    updatedRoom.gameState = { phase: "starting" }
+    updatedRoom.lastActivity = Date.now()
+
+    setCurrentRoom(updatedRoom)
+    saveRoomData(updatedRoom)
+    setGameState(gameId as GameType)
+  }
+
+  const games = [
+    {
+      id: "memoryGame",
+      title: "Love Memory Match",
+      description: "Cocokkan kartu romantis bersama pasangan",
+      icon: Heart,
+      color: "from-pink-500 to-red-500",
+      difficulty: "Easy",
+      players: "2 Players",
+      time: "5-10 min",
+    },
+    {
+      id: "drawingChallenge",
+      title: "Couple's Art Battle",
+      description: "Gambar dan tebak kata romantis",
+      icon: Palette,
+      color: "from-purple-500 to-pink-500",
+      difficulty: "Medium",
+      players: "2 Players",
+      time: "10-15 min",
+    },
+    {
+      id: "kissTimer",
+      title: "Kiss Challenge Timer",
+      description: "Tantangan ciuman terlama 💋",
+      icon: Timer,
+      color: "from-pink-600 to-red-600",
+      difficulty: "Spicy",
+      players: "2 Players",
+      time: "1-5 min",
+    },
+    {
+      id: "rhythmGame",
+      title: "Heartbeat Sync",
+      description: "Sinkronkan detak jantung kalian",
+      icon: Music,
+      color: "from-red-500 to-orange-500",
+      difficulty: "Hard",
+      players: "2 Players",
+      time: "5-8 min",
+    },
+    {
+      id: "storyBuilder",
+      title: "Love Story Creator",
+      description: "Buat cerita cinta kalian bersama",
+      icon: MessageCircle,
+      color: "from-blue-500 to-purple-500",
+      difficulty: "Easy",
+      players: "2 Players",
+      time: "15-20 min",
+    },
+    {
+      id: "photoChallenge",
+      title: "Couple Photo Hunt",
+      description: "Tantangan foto romantis",
+      icon: Camera,
+      color: "from-green-500 to-teal-500",
+      difficulty: "Medium",
+      players: "2 Players",
+      time: "20-30 min",
+    },
+  ]
+
+  const MenuScreen = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="text-center space-y-8"
+    >
+      <div className="space-y-4">
+        <motion.div
+          animate={{
+            rotate: [0, 5, -5, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+          }}
+        >
+          <Crown className="w-20 h-20 mx-auto text-yellow-400 mb-4" />
+        </motion.div>
+        <h1 className="text-6xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+          Bucin Games
+        </h1>
+        <p className="text-2xl text-white/80">Multiplayer untuk 2 Device 💕</p>
+        <div className="flex justify-center space-x-4 text-sm text-white/60">
+          <span>🎮 {games.length} Games</span>
+          <span>📱 2 Devices</span>
+          <span>🔥 Real-time</span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Masukkan nama kamu..."
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          className="w-full p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent text-lg"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setGameState("createRoom")}
+          disabled={!playerName.trim()}
+          className="flex items-center justify-center space-x-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-5 px-8 rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
+        >
+          <Users className="w-6 h-6" />
+          <span>Buat Room Baru</span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setGameState("joinRoom")}
+          disabled={!playerName.trim()}
+          className="flex items-center justify-center space-x-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white py-5 px-8 rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
+        >
+          <Play className="w-6 h-6" />
+          <span>Gabung Room</span>
+        </motion.button>
+      </div>
+    </motion.div>
+  )
+
+  const CreateRoomScreen = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="text-center space-y-8"
+    >
+      <div className="space-y-4">
+        <Users className="w-16 h-16 mx-auto text-pink-400" />
+        <h2 className="text-4xl font-bold text-white">Buat Room Baru</h2>
+        <p className="text-white/80 text-lg">Siapkan room untuk bermain berdua!</p>
+      </div>
+
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+        <h3 className="text-xl font-semibold text-white">Cara Main:</h3>
+        <ul className="text-white/80 space-y-2 text-left text-sm">
+          <li>🎯 Kamu akan jadi Host room</li>
+          <li>📱 Bagikan kode room ke pasangan</li>
+          <li>💕 Pasangan join dari device lain</li>
+          <li>🎮 Mulai bermain game bersama!</li>
+        </ul>
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={createRoom}
+        className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-lg"
+      >
+        Buat Room Sekarang! 🚀
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        onClick={() => setGameState("menu")}
+        className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+      >
+        ← Kembali
+      </motion.button>
+    </motion.div>
+  )
+
+  const JoinRoomScreen = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="text-center space-y-8"
+    >
+      <div className="space-y-4">
+        <Play className="w-16 h-16 mx-auto text-purple-400" />
+        <h2 className="text-4xl font-bold text-white">Gabung Room</h2>
+        <p className="text-white/80 text-lg">Masukkan kode room dari pasangan!</p>
+      </div>
+
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Masukkan kode room..."
+          value={roomCode}
+          onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+          className="w-full p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-lg text-center font-mono tracking-wider"
+        />
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={joinRoom}
+        disabled={!roomCode.trim()}
+        className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-5 px-8 rounded-2xl font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+      >
+        Gabung Room! 💕
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        onClick={() => setGameState("menu")}
+        className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+      >
+        ← Kembali
+      </motion.button>
+    </motion.div>
+  )
+
+  const LobbyScreen = () => {
+    const partner = currentRoom?.players.find((p) => p.id !== playerId)
+    const isRoomFull = currentRoom?.players.length === 2
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="space-y-8"
+      >
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-2">
+            <Wifi className={`w-6 h-6 ${connectionStatus === "connected" ? "text-green-400" : "text-red-400"}`} />
+            <span className="text-white font-semibold">
+              {connectionStatus === "connected" ? "Connected" : "Connecting..."}
+            </span>
+          </div>
+          <h2 className="text-4xl font-bold text-white">Room: {roomCode}</h2>
+          <p className="text-white/80">{isHost ? "Kamu adalah Host" : "Kamu bergabung sebagai Player 2"}</p>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-white">Kode Room</h3>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={copyRoomCode}
+              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-all"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 text-green-400" />
+                  <span className="text-green-400 text-sm">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-white" />
+                  <span className="text-white text-sm">Copy</span>
+                </>
+              )}
+            </motion.button>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-mono font-bold text-pink-400 bg-white/10 rounded-xl py-4">{roomCode}</div>
+            <p className="text-white/60 text-sm mt-2">Bagikan kode ini ke pasangan</p>
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+          <h3 className="text-xl font-semibold text-white">Players ({currentRoom?.players.length}/2)</h3>
+          <div className="space-y-3">
+            {currentRoom?.players.map((player, index) => (
+              <div key={player.id} className="flex items-center space-x-3 bg-white/10 rounded-xl p-4">
+                <div className={`w-3 h-3 rounded-full ${player.connected ? "bg-green-400" : "bg-gray-400"}`}></div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white font-semibold">{player.name}</span>
+                    {player.isHost && (
+                      <span className="text-xs bg-yellow-500 text-black px-2 py-1 rounded-full">HOST</span>
+                    )}
+                    {player.id === playerId && (
+                      <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">YOU</span>
+                    )}
+                  </div>
+                  <div className="text-white/60 text-sm">{player.connected ? "Online" : "Offline"}</div>
+                </div>
+              </div>
+            ))}
+
+            {!isRoomFull && (
+              <div className="flex items-center space-x-3 bg-white/5 rounded-xl p-4 border-2 border-dashed border-white/20">
+                <div className="w-3 h-3 bg-gray-400 rounded-full animate-pulse"></div>
+                <div className="flex-1">
+                  <span className="text-white/60">Menunggu pasangan...</span>
+                  <div className="text-white/40 text-sm">Bagikan kode room</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {isRoomFull && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGameState("gameSelect")}
+            className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-lg"
+          >
+            Mulai Bermain! 🎮
+          </motion.button>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={() => {
+            setCurrentRoom(null)
+            setGameState("menu")
+          }}
+          className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+        >
+          ← Keluar Room
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  const GameSelectScreen = () => {
+    const partner = currentRoom?.players.find((p) => p.id !== playerId)
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="space-y-8"
+      >
+        <div className="text-center space-y-4">
+          <h2 className="text-4xl font-bold text-white">Pilih Game Bucin! 💖</h2>
+          <p className="text-white/80 text-lg">
+            <span className="text-pink-400 font-semibold">
+              {currentRoom?.players.find((p) => p.id === playerId)?.name}
+            </span>{" "}
+            vs <span className="text-purple-400 font-semibold">{partner?.name}</span>
+          </p>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4">
+            <div className="text-2xl font-bold text-yellow-400">Room: {roomCode}</div>
+            <div className="text-sm text-white/60">2 Players Connected</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-96 overflow-y-auto pr-2">
+          {games.map((game, index) => {
+            const IconComponent = game.icon
+            return (
+              <motion.div
+                key={game.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                onClick={() => (isHost ? startGameSession(game.id) : null)}
+                className={`bg-white/10 backdrop-blur-md rounded-3xl p-6 transition-all group border border-white/20 hover:border-white/40 ${
+                  isHost ? "cursor-pointer hover:bg-white/20" : "cursor-not-allowed opacity-60"
+                }`}
+              >
+                <div className="space-y-4">
+                  <div
+                    className={`w-16 h-16 mx-auto bg-gradient-to-r ${game.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}
+                  >
+                    <IconComponent className="w-8 h-8 text-white" />
+                  </div>
+
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-bold text-white group-hover:text-pink-300 transition-colors">
+                      {game.title}
+                    </h3>
+                    <p className="text-white/70 text-sm leading-relaxed">{game.description}</p>
+                  </div>
+
+                  <div className="flex justify-between text-xs text-white/60">
+                    <span className="bg-white/10 px-2 py-1 rounded-full">{game.difficulty}</span>
+                    <span className="bg-white/10 px-2 py-1 rounded-full">{game.time}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {!isHost && (
+          <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-2xl p-4 text-center">
+            <p className="text-yellow-200">
+              ⏳ Menunggu {currentRoom?.players.find((p) => p.isHost)?.name} memilih game...
+            </p>
+          </div>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={() => setGameState("lobby")}
+          className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+        >
+          ← Kembali ke Lobby
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  // Multiplayer Memory Game
+  const MultiplayerMemoryGame = () => {
+    const [cards, setCards] = useState<Array<{ id: number; emoji: string; flipped: boolean; matched: boolean }>>([])
+    const [currentTurn, setCurrentTurn] = useState<string>("")
+    const [gameStarted, setGameStarted] = useState(false)
+    const [playerScores, setPlayerScores] = useState<{ [key: string]: number }>({})
+
+    const loveEmojis = ["💕", "💖", "💗", "💘", "💝", "💞", "💟", "❤️"]
+
+    const initializeGame = () => {
+      const gameCards = [...loveEmojis, ...loveEmojis]
+        .sort(() => Math.random() - 0.5)
+        .map((emoji, index) => ({
+          id: index,
+          emoji,
+          flipped: false,
+          matched: false,
+        }))
+
+      setCards(gameCards)
+      setGameStarted(true)
+      setCurrentTurn(playerId)
+
+      const scores: { [key: string]: number } = {}
+      currentRoom?.players.forEach((player) => {
+        scores[player.id] = 0
+      })
+      setPlayerScores(scores)
+    }
+
+    const isMyTurn = currentTurn === playerId
+    const currentPlayer = currentRoom?.players.find((p) => p.id === currentTurn)
+    const myScore = playerScores[playerId] || 0
+    const partnerScore =
+      Object.values(playerScores).find((_, index) => Object.keys(playerScores)[index] !== playerId) || 0
+
+    if (!gameStarted) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-8"
+        >
+          <div className="space-y-4">
+            <Heart className="w-16 h-16 mx-auto text-pink-400" />
+            <h2 className="text-4xl font-bold text-white">Multiplayer Memory Match 💕</h2>
+            <p className="text-white/80 text-lg">Cocokkan kartu cinta secara bergantian!</p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-xl font-semibold text-white">Cara Main:</h3>
+            <ul className="text-white/80 space-y-2 text-left">
+              <li>🎯 Bermain secara bergantian</li>
+              <li>💖 Cocokkan 2 kartu yang sama untuk dapat poin</li>
+              <li>⚡ Jika salah, giliran pindah ke pasangan</li>
+              <li>🏆 Pemain dengan poin terbanyak menang</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4">
+            <p className="text-white">
+              Room: <span className="text-pink-400 font-bold">{roomCode}</span>
+            </p>
+            <p className="text-white/70 text-sm">2 Players Ready</p>
+          </div>
+
+          {isHost ? (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={initializeGame}
+              className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-2xl font-bold text-xl shadow-lg"
+            >
+              Mulai Game! 🚀
+            </motion.button>
+          ) : (
+            <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-2xl p-4">
+              <p className="text-yellow-200">⏳ Menunggu host memulai game...</p>
+            </div>
+          )}
+        </motion.div>
+      )
+    }
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4">
+          <div className="flex justify-between items-center">
+            <div className="text-white">
+              <div className="text-lg font-semibold">Your Score: {myScore}</div>
+              <div className="text-sm text-white/70">Partner: {partnerScore}</div>
+            </div>
+            <div className="text-right">
+              <div className={`text-lg font-semibold ${isMyTurn ? "text-green-400" : "text-white/60"}`}>
+                {isMyTurn ? "Your Turn!" : `${currentPlayer?.name}'s Turn`}
+              </div>
+              <div className="text-sm text-white/70">Room: {roomCode}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          {cards.map((card) => (
+            <motion.div
+              key={card.id}
+              whileHover={isMyTurn ? { scale: 1.05 } : {}}
+              whileTap={isMyTurn ? { scale: 0.95 } : {}}
+              onClick={() => {
+                if (!isMyTurn || card.flipped || card.matched) return
+                // Handle card click logic here
+              }}
+              className={`aspect-square rounded-2xl flex items-center justify-center text-4xl font-bold transition-all ${
+                card.flipped || card.matched
+                  ? "bg-white text-gray-800 shadow-lg"
+                  : `bg-gradient-to-br from-pink-500 to-purple-600 text-white ${
+                      isMyTurn
+                        ? "hover:from-pink-400 hover:to-purple-500 cursor-pointer"
+                        : "cursor-not-allowed opacity-60"
+                    }`
+              }`}
+            >
+              {card.flipped || card.matched ? card.emoji : "💖"}
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={() => setGameState("gameSelect")}
+          className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+        >
+          ← Kembali ke Menu Game
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Anime Background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070')",
+        }}
+      />
+
+      {/* Animated Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-pink-900/70 to-blue-900/90" />
+
+      {/* Floating Hearts Animation */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-pink-400/30"
+            animate={{
+              y: [-20, -100],
+              x: [0, Math.random() * 100 - 50],
+              opacity: [0, 1, 0],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: Math.random() * 4 + 3,
+              repeat: Number.POSITIVE_INFINITY,
+              delay: Math.random() * 3,
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              fontSize: `${Math.random() * 20 + 10}px`,
+            }}
+          >
+            {["💕", "💖", "💗", "💘", "💝", "💞"][Math.floor(Math.random() * 6)]}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <AnimatePresence mode="wait">
+            {gameState === "menu" && <MenuScreen />}
+            {gameState === "createRoom" && <CreateRoomScreen />}
+            {gameState === "joinRoom" && <JoinRoomScreen />}
+            {gameState === "lobby" && <LobbyScreen />}
+            {gameState === "gameSelect" && <GameSelectScreen />}
+            {gameState === "memoryGame" && <MultiplayerMemoryGame />}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
