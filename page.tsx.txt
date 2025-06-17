@@ -1,0 +1,798 @@
+"use client"
+
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Heart, Play, Camera, Palette, Music, MessageCircle, Timer, Map, Puzzle, Zap, Crown } from "lucide-react"
+
+type GameType =
+  | "menu"
+  | "gameSelect"
+  | "memoryGame"
+  | "drawingChallenge"
+  | "rhythmGame"
+  | "storyBuilder"
+  | "photoChallenge"
+  | "kissTimer"
+  | "datePlanner"
+  | "lovePuzzle"
+  | "romanticDare"
+
+export default function UltimateCouplePage() {
+  const [gameState, setGameState] = useState<GameType>("menu")
+  const [playerName, setPlayerName] = useState("")
+  const [partnerName, setPartnerName] = useState("")
+  const [currentScore, setCurrentScore] = useState(0)
+  const [totalScore, setTotalScore] = useState(0)
+  const [gameData, setGameData] = useState<any>({})
+
+  const games = [
+    {
+      id: "memoryGame",
+      title: "Love Memory Match",
+      description: "Cocokkan kartu romantis bersama pasangan",
+      icon: Heart,
+      color: "from-pink-500 to-red-500",
+      difficulty: "Easy",
+      players: "2 Players",
+      time: "5-10 min",
+    },
+    {
+      id: "drawingChallenge",
+      title: "Couple's Art Battle",
+      description: "Gambar dan tebak kata romantis",
+      icon: Palette,
+      color: "from-purple-500 to-pink-500",
+      difficulty: "Medium",
+      players: "2 Players",
+      time: "10-15 min",
+    },
+    {
+      id: "rhythmGame",
+      title: "Heartbeat Sync",
+      description: "Sinkronkan detak jantung kalian",
+      icon: Music,
+      color: "from-red-500 to-orange-500",
+      difficulty: "Hard",
+      players: "2 Players",
+      time: "5-8 min",
+    },
+    {
+      id: "storyBuilder",
+      title: "Love Story Creator",
+      description: "Buat cerita cinta kalian bersama",
+      icon: MessageCircle,
+      color: "from-blue-500 to-purple-500",
+      difficulty: "Easy",
+      players: "2 Players",
+      time: "15-20 min",
+    },
+    {
+      id: "photoChallenge",
+      title: "Couple Photo Hunt",
+      description: "Tantangan foto romantis",
+      icon: Camera,
+      color: "from-green-500 to-teal-500",
+      difficulty: "Medium",
+      players: "2 Players",
+      time: "20-30 min",
+    },
+    {
+      id: "kissTimer",
+      title: "Kiss Challenge Timer",
+      description: "Tantangan ciuman terlama 💋",
+      icon: Timer,
+      color: "from-pink-600 to-red-600",
+      difficulty: "Spicy",
+      players: "2 Players",
+      time: "1-5 min",
+    },
+    {
+      id: "datePlanner",
+      title: "Dream Date Planner",
+      description: "Rencanakan kencan impian bersama",
+      icon: Map,
+      color: "from-indigo-500 to-blue-500",
+      difficulty: "Easy",
+      players: "2 Players",
+      time: "10-15 min",
+    },
+    {
+      id: "lovePuzzle",
+      title: "Love Letter Puzzle",
+      description: "Susun surat cinta yang tersebar",
+      icon: Puzzle,
+      color: "from-yellow-500 to-orange-500",
+      difficulty: "Medium",
+      players: "2 Players",
+      time: "8-12 min",
+    },
+    {
+      id: "romanticDare",
+      title: "Romantic Truth or Dare",
+      description: "Truth or dare khusus pasangan",
+      icon: Zap,
+      color: "from-purple-600 to-pink-600",
+      difficulty: "Spicy",
+      players: "2 Players",
+      time: "15-25 min",
+    },
+  ]
+
+  const MenuScreen = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="text-center space-y-8"
+    >
+      <div className="space-y-4">
+        <motion.div
+          animate={{
+            rotate: [0, 5, -5, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+          }}
+        >
+          <Crown className="w-20 h-20 mx-auto text-yellow-400 mb-4" />
+        </motion.div>
+        <h1 className="text-6xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+          Bucin Games
+        </h1>
+        <p className="text-2xl text-white/80">Ultimate Collection untuk Pasangan Bucin 💕</p>
+        <div className="flex justify-center space-x-4 text-sm text-white/60">
+          <span>🎮 {games.length} Games</span>
+          <span>💖 Unlimited Fun</span>
+          <span>🔥 Super Romantic</span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Nama kamu (Player 1)..."
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          className="w-full p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent text-lg"
+        />
+        <input
+          type="text"
+          placeholder="Nama pasangan (Player 2)..."
+          value={partnerName}
+          onChange={(e) => setPartnerName(e.target.value)}
+          className="w-full p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-lg"
+        />
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setGameState("gameSelect")}
+        disabled={!playerName.trim() || !partnerName.trim()}
+        className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white py-5 px-8 rounded-2xl font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-pink-500/25 transition-all"
+      >
+        <div className="flex items-center justify-center space-x-3">
+          <Play className="w-6 h-6" />
+          <span>Mulai Petualangan Cinta! 🚀</span>
+        </div>
+      </motion.button>
+    </motion.div>
+  )
+
+  const GameSelectScreen = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="space-y-8"
+    >
+      <div className="text-center space-y-4">
+        <h2 className="text-4xl font-bold text-white">Pilih Game Bucin Kalian! 💖</h2>
+        <p className="text-white/80 text-lg">
+          Halo <span className="text-pink-400 font-semibold">{playerName}</span> &{" "}
+          <span className="text-purple-400 font-semibold">{partnerName}</span>!
+        </p>
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4">
+          <div className="text-2xl font-bold text-yellow-400">Total Score: {totalScore} 💎</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-96 overflow-y-auto pr-2">
+        {games.map((game, index) => {
+          const IconComponent = game.icon
+          return (
+            <motion.div
+              key={game.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              onClick={() => setGameState(game.id as GameType)}
+              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 cursor-pointer hover:bg-white/20 transition-all group border border-white/20 hover:border-white/40"
+            >
+              <div className="space-y-4">
+                <div
+                  className={`w-16 h-16 mx-auto bg-gradient-to-r ${game.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}
+                >
+                  <IconComponent className="w-8 h-8 text-white" />
+                </div>
+
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-white group-hover:text-pink-300 transition-colors">
+                    {game.title}
+                  </h3>
+                  <p className="text-white/70 text-sm leading-relaxed">{game.description}</p>
+                </div>
+
+                <div className="flex justify-between text-xs text-white/60">
+                  <span className="bg-white/10 px-2 py-1 rounded-full">{game.difficulty}</span>
+                  <span className="bg-white/10 px-2 py-1 rounded-full">{game.time}</span>
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setGameState("menu")}
+        className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all border border-white/20"
+      >
+        ← Kembali ke Menu
+      </motion.button>
+    </motion.div>
+  )
+
+  // Memory Game Component
+  const MemoryGame = () => {
+    const [cards, setCards] = useState<Array<{ id: number; emoji: string; flipped: boolean; matched: boolean }>>([])
+    const [selectedCards, setSelectedCards] = useState<number[]>([])
+    const [moves, setMoves] = useState(0)
+    const [gameStarted, setGameStarted] = useState(false)
+
+    const loveEmojis = ["💕", "💖", "💗", "💘", "💝", "💞", "💟", "❤️"]
+
+    const initializeGame = () => {
+      const gameCards = [...loveEmojis, ...loveEmojis]
+        .sort(() => Math.random() - 0.5)
+        .map((emoji, index) => ({
+          id: index,
+          emoji,
+          flipped: false,
+          matched: false,
+        }))
+      setCards(gameCards)
+      setGameStarted(true)
+      setMoves(0)
+      setSelectedCards([])
+    }
+
+    const handleCardClick = (cardId: number) => {
+      if (selectedCards.length === 2) return
+      if (cards[cardId].flipped || cards[cardId].matched) return
+
+      const newCards = [...cards]
+      newCards[cardId].flipped = true
+      setCards(newCards)
+
+      const newSelected = [...selectedCards, cardId]
+      setSelectedCards(newSelected)
+
+      if (newSelected.length === 2) {
+        setMoves(moves + 1)
+        const [first, second] = newSelected
+
+        if (cards[first].emoji === cards[second].emoji) {
+          setTimeout(() => {
+            const matchedCards = [...cards]
+            matchedCards[first].matched = true
+            matchedCards[second].matched = true
+            setCards(matchedCards)
+            setSelectedCards([])
+
+            if (matchedCards.every((card) => card.matched)) {
+              setCurrentScore(Math.max(100 - moves * 5, 20))
+              setTotalScore((prev) => prev + Math.max(100 - moves * 5, 20))
+            }
+          }, 1000)
+        } else {
+          setTimeout(() => {
+            const resetCards = [...cards]
+            resetCards[first].flipped = false
+            resetCards[second].flipped = false
+            setCards(resetCards)
+            setSelectedCards([])
+          }, 1000)
+        }
+      }
+    }
+
+    if (!gameStarted) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-8"
+        >
+          <div className="space-y-4">
+            <Heart className="w-16 h-16 mx-auto text-pink-400" />
+            <h2 className="text-4xl font-bold text-white">Love Memory Match 💕</h2>
+            <p className="text-white/80 text-lg">Cocokkan kartu cinta bersama pasangan!</p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-xl font-semibold text-white">Cara Main:</h3>
+            <ul className="text-white/80 space-y-2 text-left">
+              <li>🎯 Klik kartu untuk membuka</li>
+              <li>💖 Cocokkan 2 kartu yang sama</li>
+              <li>⚡ Semakin sedikit langkah, semakin tinggi skor</li>
+              <li>🏆 Selesaikan semua pasangan untuk menang</li>
+            </ul>
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={initializeGame}
+            className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-2xl font-bold text-xl shadow-lg"
+          >
+            Mulai Game! 🚀
+          </motion.button>
+        </motion.div>
+      )
+    }
+
+    const allMatched = cards.every((card) => card.matched)
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="text-white">
+            <span className="text-2xl font-bold">Moves: {moves}</span>
+          </div>
+          <div className="text-white">
+            <span className="text-2xl font-bold">Score: {currentScore}</span>
+          </div>
+        </div>
+
+        {allMatched ? (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="text-center space-y-6 bg-white/10 backdrop-blur-md rounded-3xl p-8"
+          >
+            <div className="text-6xl">🎉</div>
+            <h3 className="text-3xl font-bold text-white">Selamat!</h3>
+            <p className="text-white/80">Kalian berhasil mencocokkan semua kartu!</p>
+            <div className="text-2xl font-bold text-yellow-400">+{currentScore} Poin!</div>
+
+            <div className="space-y-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setGameState("gameSelect")}
+                className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 px-6 rounded-2xl font-semibold"
+              >
+                Pilih Game Lain 🎮
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={initializeGame}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-6 rounded-2xl font-semibold"
+              >
+                Main Lagi 🔄
+              </motion.button>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-4 gap-4">
+            {cards.map((card) => (
+              <motion.div
+                key={card.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleCardClick(card.id)}
+                className={`aspect-square rounded-2xl cursor-pointer flex items-center justify-center text-4xl font-bold transition-all ${
+                  card.flipped || card.matched
+                    ? "bg-white text-gray-800 shadow-lg"
+                    : "bg-gradient-to-br from-pink-500 to-purple-600 text-white hover:from-pink-400 hover:to-purple-500"
+                }`}
+              >
+                {card.flipped || card.matched ? card.emoji : "💖"}
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={() => setGameState("gameSelect")}
+          className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+        >
+          ← Kembali ke Menu Game
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  // Drawing Challenge Component
+  const DrawingChallenge = () => {
+    const [currentWord, setCurrentWord] = useState("")
+    const [timeLeft, setTimeLeft] = useState(60)
+    const [gamePhase, setGamePhase] = useState<"setup" | "drawing" | "guessing" | "result">("setup")
+    const [currentPlayer, setCurrentPlayer] = useState(1)
+    const [score, setScore] = useState({ player1: 0, player2: 0 })
+
+    const romanticWords = [
+      "Ciuman Pertama",
+      "Bulan Madu",
+      "Pelukan Hangat",
+      "Kencan Romantis",
+      "Surat Cinta",
+      "Bunga Mawar",
+      "Cincin Berlian",
+      "Makan Malam Romantis",
+      "Sunset Berdua",
+      "Jalan-jalan di Pantai",
+      "Nonton Film Bareng",
+      "Masak Bersama",
+    ]
+
+    const startDrawing = () => {
+      const randomWord = romanticWords[Math.floor(Math.random() * romanticWords.length)]
+      setCurrentWord(randomWord)
+      setGamePhase("drawing")
+      setTimeLeft(60)
+
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            setGamePhase("guessing")
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <div className="text-center space-y-4">
+          <Palette className="w-16 h-16 mx-auto text-purple-400" />
+          <h2 className="text-4xl font-bold text-white">Couple's Art Battle 🎨</h2>
+          <p className="text-white/80">Gambar dan tebak kata romantis!</p>
+        </div>
+
+        {gamePhase === "setup" && (
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 space-y-4">
+              <h3 className="text-xl font-semibold text-white">Cara Main:</h3>
+              <ul className="text-white/80 space-y-2 text-left">
+                <li>
+                  🎯 {playerName} gambar, {partnerName} menebak (atau sebaliknya)
+                </li>
+                <li>⏰ Waktu menggambar: 60 detik</li>
+                <li>💖 Kata-kata romantis yang harus digambar</li>
+                <li>🏆 Dapat poin jika berhasil menebak</li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-center text-white">
+                <p className="text-lg">
+                  Giliran:{" "}
+                  <span className="text-pink-400 font-bold">{currentPlayer === 1 ? playerName : partnerName}</span>{" "}
+                  menggambar
+                </p>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={startDrawing}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 px-8 rounded-2xl font-bold text-xl"
+              >
+                Mulai Menggambar! 🖌️
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {gamePhase === "drawing" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="text-white">
+                <span className="text-lg">
+                  Kata: <span className="text-pink-400 font-bold">{currentWord}</span>
+                </span>
+              </div>
+              <div className="text-white">
+                <span className="text-2xl font-bold">⏰ {timeLeft}s</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 min-h-80 flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <Palette className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl">Area Menggambar</p>
+                <p className="text-sm">Gambar: "{currentWord}"</p>
+              </div>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setGamePhase("guessing")}
+              className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 px-6 rounded-2xl font-semibold"
+            >
+              Selesai Menggambar! ✅
+            </motion.button>
+          </div>
+        )}
+
+        {gamePhase === "guessing" && (
+          <div className="space-y-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-2xl font-bold text-white">
+                {currentPlayer === 1 ? partnerName : playerName}, coba tebak gambarnya!
+              </h3>
+              <p className="text-white/80">Apa yang digambar {currentPlayer === 1 ? playerName : partnerName}?</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 min-h-60 flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <p className="text-lg">Gambar: "{currentWord}"</p>
+                <p className="text-sm">(Ini simulasi - dalam implementasi nyata akan ada canvas)</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => {
+                  const newScore = { ...score }
+                  if (currentPlayer === 1) {
+                    newScore.player2 += 50
+                  } else {
+                    newScore.player1 += 50
+                  }
+                  setScore(newScore)
+                  setTotalScore((prev) => prev + 50)
+                  setGamePhase("result")
+                }}
+                className="bg-gradient-to-r from-green-500 to-teal-500 text-white py-4 px-6 rounded-2xl font-bold"
+              >
+                Benar! 🎉
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setGamePhase("result")}
+                className="bg-gradient-to-r from-red-500 to-pink-500 text-white py-4 px-6 rounded-2xl font-bold"
+              >
+                Salah 😅
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {gamePhase === "result" && (
+          <div className="space-y-6">
+            <div className="text-center space-y-4">
+              <div className="text-6xl">🎨</div>
+              <h3 className="text-3xl font-bold text-white">Round Selesai!</h3>
+              <p className="text-white/80">Kata: "{currentWord}"</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-white mb-4">Skor Sementara:</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-white">
+                  <span>{playerName}:</span>
+                  <span className="font-bold">{score.player1} poin</span>
+                </div>
+                <div className="flex justify-between text-white">
+                  <span>{partnerName}:</span>
+                  <span className="font-bold">{score.player2} poin</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => {
+                  setCurrentPlayer(currentPlayer === 1 ? 2 : 1)
+                  setGamePhase("setup")
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-semibold"
+              >
+                Round Selanjutnya 🔄
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setGameState("gameSelect")}
+                className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+              >
+                Kembali ke Menu 🏠
+              </motion.button>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    )
+  }
+
+  // Kiss Timer Challenge
+  const KissTimer = () => {
+    const [isRunning, setIsRunning] = useState(false)
+    const [time, setTime] = useState(0)
+    const [bestTime, setBestTime] = useState(0)
+    const [challenge, setChallenge] = useState("")
+
+    const challenges = [
+      "Ciuman terlama tanpa bernapas 💋",
+      "Ciuman sambil tersenyum 😊💋",
+      "Ciuman di pipi bergantian 😘",
+      "Ciuman butterfly (dengan bulu mata) 🦋",
+      "Ciuman Eskimo (hidung ke hidung) ❄️",
+    ]
+
+    const startTimer = () => {
+      setIsRunning(true)
+      setTime(0)
+      setChallenge(challenges[Math.floor(Math.random() * challenges.length)])
+
+      const interval = setInterval(() => {
+        setTime((prev) => {
+          const newTime = prev + 1
+          return newTime
+        })
+      }, 100)
+
+      // Store interval ID for cleanup
+      ;(window as any).kissTimerInterval = interval
+    }
+
+    const stopTimer = () => {
+      setIsRunning(false)
+      if ((window as any).kissTimerInterval) {
+        clearInterval((window as any).kissTimerInterval)
+      }
+
+      if (time > bestTime) {
+        setBestTime(time)
+        setTotalScore((prev) => prev + Math.floor(time / 10))
+      }
+    }
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+        <div className="text-center space-y-4">
+          <Timer className="w-16 h-16 mx-auto text-red-400" />
+          <h2 className="text-4xl font-bold text-white">Kiss Challenge Timer 💋</h2>
+          <p className="text-white/80 text-lg">Tantangan ciuman untuk pasangan bucin!</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-pink-500/20 to-red-500/20 backdrop-blur-md rounded-3xl p-8 border border-pink-500/30">
+          <div className="text-center space-y-6">
+            <div className="text-8xl font-mono text-white">{(time / 10).toFixed(1)}s</div>
+
+            {challenge && (
+              <div className="bg-white/10 rounded-2xl p-4">
+                <p className="text-xl text-white font-semibold">{challenge}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {!isRunning ? (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startTimer}
+                  className="w-full bg-gradient-to-r from-pink-600 to-red-600 text-white py-6 px-8 rounded-2xl font-bold text-2xl shadow-lg"
+                >
+                  Mulai Challenge! 💋
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={stopTimer}
+                  className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-6 px-8 rounded-2xl font-bold text-2xl shadow-lg animate-pulse"
+                >
+                  Stop! ⏹️
+                </motion.button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {bestTime > 0 && (
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+            <h3 className="text-xl font-semibold text-white mb-2">Record Terbaik:</h3>
+            <div className="text-3xl font-bold text-yellow-400">{(bestTime / 10).toFixed(1)}s</div>
+            <p className="text-white/70 mt-2">Poin yang didapat: +{Math.floor(bestTime / 10)}</p>
+          </div>
+        )}
+
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Tips Challenge:</h3>
+          <ul className="text-white/80 space-y-2 text-sm">
+            <li>💡 Bernapas melalui hidung saat ciuman</li>
+            <li>💡 Rileks dan nikmati momennya</li>
+            <li>💡 Jangan terlalu memaksakan diri</li>
+            <li>💡 Yang penting kebersamaan, bukan rekor!</li>
+          </ul>
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={() => setGameState("gameSelect")}
+          className="w-full bg-white/10 backdrop-blur-md text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all"
+        >
+          ← Kembali ke Menu Game
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Anime Background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070')",
+        }}
+      />
+
+      {/* Animated Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-pink-900/70 to-blue-900/90" />
+
+      {/* Floating Hearts Animation */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-pink-400/30"
+            animate={{
+              y: [-20, -100],
+              x: [0, Math.random() * 100 - 50],
+              opacity: [0, 1, 0],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: Math.random() * 4 + 3,
+              repeat: Number.POSITIVE_INFINITY,
+              delay: Math.random() * 3,
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              fontSize: `${Math.random() * 20 + 10}px`,
+            }}
+          >
+            {["💕", "💖", "💗", "💘", "💝", "💞"][Math.floor(Math.random() * 6)]}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <AnimatePresence mode="wait">
+            {gameState === "menu" && <MenuScreen />}
+            {gameState === "gameSelect" && <GameSelectScreen />}
+            {gameState === "memoryGame" && <MemoryGame />}
+            {gameState === "drawingChallenge" && <DrawingChallenge />}
+            {gameState === "kissTimer" && <KissTimer />}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
